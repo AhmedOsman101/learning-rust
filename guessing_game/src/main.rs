@@ -1,44 +1,46 @@
 use rand::Rng;
+use std::cmp::Ordering;
 use std::io;
 
-fn main() {
-  println!("---- Guessing Game ----\n");
+fn input(msg: &str) -> String {
+  println!("{msg}");
 
-  let secret_number: u32 = rand::rng().random_range(1..101);
-
-  let mut guess: String = String::new();
-
-  println!("Enter a guess");
-
+  let mut res = String::new();
   io::stdin()
-    .read_line(&mut guess)
-    .expect("Failed to read line");
+    .read_line(&mut res)
+    .expect("Failed to read from stdio");
 
-  let mut guess_value: u32 = guess
-    .trim()
-    .parse()
-    .expect("Invalid input, expected a number");
+  String::from(res.trim())
+}
 
-  while guess_value != secret_number {
-    if guess_value > secret_number {
-      println!("Smaller\n");
-    } else if guess_value < secret_number {
-      println!("Bigger\n");
+fn main() {
+  println!("---- Guessing Game ----");
+
+  // Generate a random number between 1 and 100 (inclusive)
+  let secret: u32 = rand::rng().random_range(1..=100);
+
+  loop {
+    let guess = input("\nPlease enter your guess.");
+
+    if guess == "quit" {
+      println!("Bye!");
+      break;
     }
+    let guess = match guess.parse() {
+      Ok(num) => num,
+      Err(_) => {
+        println!("Invalid guess, enter a number between 1 and 100 or type 'quit' to exit");
+        continue;
+      }
+    };
 
-    println!("Enter a guess");
-
-    guess = String::new();
-
-    io::stdin()
-      .read_line(&mut guess)
-      .expect("Failed to read line");
-
-    guess_value = guess
-      .trim()
-      .parse()
-      .expect("Invalid input, expected a number");
+    match secret.cmp(&guess) {
+      Ordering::Less => println!("Smaller!"),
+      Ordering::Greater => println!("Bigger!"),
+      Ordering::Equal => {
+        println!("You guessed it right!");
+        break;
+      }
+    }
   }
-
-  println!("\nYou guessed it right!");
 }
