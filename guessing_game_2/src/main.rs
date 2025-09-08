@@ -1,31 +1,46 @@
+use rand::Rng;
+use std::cmp::Ordering;
 use std::io;
 
-fn main() {
-  println!("Guess the number!");
+fn input(msg: &str) -> String {
+  println!("{msg}");
 
-  let secret: u8 = 50;
+  let mut res = String::new();
+  io::stdin()
+    .read_line(&mut res)
+    .expect("Failed to read from stdio");
+
+  String::from(res.trim())
+}
+
+fn main() {
+  println!("---- Guessing Game ----");
+
+  // Generate a random number between 1 and 100 (inclusive)
+  let secret: u32 = rand::rng().random_range(1..=100);
 
   loop {
-    println!("\nPlease enter your guess.");
+    let guess = input("\nPlease enter your guess.");
 
-    let mut guess = String::new();
-
-    io::stdin()
-      .read_line(&mut guess)
-      .expect("Failed to read from stdio");
-
-    let guess: u8 = guess
-      .trim()
-      .parse()
-      .expect("The input should be a valid integer");
-
-    if guess < secret {
-      println!("Bigger!");
-    } else if guess > secret {
-      println!("Smaller!");
-    } else {
-      println!("You guessed it right!");
+    if guess == "quit" {
+      println!("Bye!");
       break;
+    }
+    let guess = match guess.parse() {
+      Ok(num) => num,
+      Err(_) => {
+        println!("Invalid guess, enter a number between 1 and 100 or type 'quit' to exit");
+        continue;
+      }
+    };
+
+    match secret.cmp(&guess) {
+      Ordering::Less => println!("Smaller!"),
+      Ordering::Greater => println!("Bigger!"),
+      Ordering::Equal => {
+        println!("You guessed it right!");
+        break;
+      }
     }
   }
 }
