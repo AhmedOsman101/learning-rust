@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0001 — Cargo runs the shop</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/prism.css">
+<script src="../assets/prism.js" defer></script>
+<script src="../assets/quiz-buttons.js" defer></script>
+</head>
+<body>
+
+<p><a href="../MISSION.md">Mission</a> · <a href="../reference/glossary.html">Glossary</a> · Lesson 0001</p>
+
+<h1>0001 — Cargo runs the shop</h1>
+
+<p><em>One concept:</em> a Rust project is a <strong>Cargo project</strong> — one manifest describes it, a handful of commands drive it. <em>One win:</em> your <code>playground/</code> ends this lesson <strong>rustfmt-clean and Clippy-clean</strong>, and you know what every file in it is for. That is step zero of the mission's "passes Clippy, looks like experienced Rust" bar.</p>
+
+<h2>1 · Recall first (no peeking)</h2>
+
+<p>You have built two Cargo projects already, so this should be in there somewhere. Answer from memory, then open the reveal.</p>
+
+<div class="quiz" data-quiz>
+<p class="quiz-q">You ran <code>cargo new playground</code> a year ago. Which files did it create, and what is each one for?</p>
+<div class="quiz-choices">
+<button data-correct>Manifest, entry point, ignore rules</button>
+<button>Binary, lockfile, docs folder</button>
+</div>
+<p class="quiz-feedback" hidden data-why><code>Cargo.toml</code> (the manifest — your declarations), <code>src/main.rs</code> (the entry point), plus <code>.gitignore</code> and a git repo. Full anatomy in §2 — check what you missed.</p>
+</div>
+
+<div class="quiz" data-quiz>
+<p class="quiz-q">What two things does <code>cargo run</code> do, in order?</p>
+<div class="quiz-choices">
+<button>Runs tests, then executes binary</button>
+<button data-correct>Compiles the code, executes binary</button>
+</div>
+<p class="quiz-feedback" hidden data-why><code>cargo run</code> = build, then execute <code>target/debug/&lt;name&gt;</code>. If that was a guess, the command table in §2 will cement it.</p>
+</div>
+
+<h2>2 · The knowledge (five minutes)</h2>
+
+<p>Here is your <code>playground/</code>, annotated. Every claim below is grounded in <a href="file:///home/othman/.local/share/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/book/ch01-03-hello-cargo.html">Book §1.3, "Hello, Cargo!"</a> (<a href="https://doc.rust-lang.org/book/ch01-03-hello-cargo.html">online mirror</a>).</p>
+
+<pre class="language-bash"><code class="language-bash">playground/
+├── Cargo.toml    # the MANIFEST: name, edition, dependencies — you edit this
+├── Cargo.lock    # exact resolved dependency versions — Cargo edits this
+├── src/
+│   └── main.rs   # entry point: `fn main` lives here
+└── target/       # build artifacts (gitignored) — safe to delete anytime</code></pre>
+
+<p>Two distinctions that matter for the whole course:</p>
+<ul>
+<li><strong>You edit <code>Cargo.toml</code>; Cargo owns <code>Cargo.lock</code>.</strong> The manifest says "I need <code>rand 0.9</code>"; the lockfile pins the exact version that built. (Your <code>.gitignore</code> ignores <code>target/</code> but keeps <code>Cargo.lock</code> — correct for a binary.)</li>
+<li><strong><code>println!</code> is a macro, not a function</strong> — the <code>!</code> says "expand this at compile time" (<a href="file:///home/othman/.local/share/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/book/ch01-02-hello-world.html">Book §1.2</a>, <a href="https://doc.rust-lang.org/book/ch01-02-hello-world.html">mirror</a>). Macros return to haunt us pleasantly in later lessons; for now, just read <code>!</code> as "macro".</li>
+</ul>
+
+<table>
+<thead><tr><th>Command</th><th>What it does</th><th>When to reach for it</th></tr></thead>
+<tbody>
+<tr><td><code>cargo new</code></td><td>Scaffolds manifest + entry point + git repo</td><td>Once per project</td></tr>
+<tr><td><code>cargo build</code></td><td>Compiles to <code>target/debug/</code></td><td>You want the binary</td></tr>
+<tr><td><code>cargo run</code></td><td>Builds (if needed), then executes</td><td>Everyday development loop</td></tr>
+<tr><td><code>cargo check</code></td><td>Type-checks <em>without</em> generating code — much faster</td><td>Fast feedback while editing</td></tr>
+<tr><td><code>cargo clippy</code></td><td>Lints for unidiomatic code</td><td>Before every commit (mission rule)</td></tr>
+<tr><td><code>cargo fmt</code></td><td>Reformats to the canonical style</td><td>Before every commit (mission rule)</td></tr>
+</tbody>
+</table>
+
+<h2>3 · Hands-on: clean your own project</h2>
+
+<div class="task">
+<p><strong>Step 1 — predict.</strong> I ran <code>cargo fmt --check</code> on your <code>playground/</code> and it failed. Before running anything, guess: <em>what</em> will it complain about? (Hint: look at the indentation in <code>playground/src/main.rs</code>.)</p>
+<details><summary>Reveal after guessing</summary>
+<p>Indentation. The file uses 2-space indents; rustfmt demands 4. Nothing semantic — pure style, which is exactly what <code>fmt</code> owns.</p>
+</details>
+</div>
+
+<div class="task">
+<p><strong>Step 2 — see it.</strong> Run <code>cargo fmt --check</code> in <code>playground/</code>. Checkpoint: you see a diff touching only whitespace.</p>
+<p><strong>Step 3 — apply it.</strong> Run <code>cargo fmt</code>, then <code>git diff</code>. Checkpoint: the diff shows indentation changes and nothing else. Your code now matches what every Rust developer's editor produces.</p>
+</div>
+
+<div class="task">
+<p><strong>Step 4 — lint it.</strong> Run <code>cargo clippy</code> in <code>playground/</code>, then in <code>guessing_game/</code>. Checkpoint: both are clean (I verified — zero warnings). That silence <em>is</em> the result: Clippy-clean is the mission's baseline, and you now know how to check it.</p>
+</div>
+
+<h2>4 · Lock it in</h2>
+
+<div class="quiz" data-quiz>
+<p class="quiz-q">You add the rand crate. Which file do you edit?</p>
+<div class="quiz-choices">
+<button>Cargo.lock exact versions</button>
+<button>src/main.rs imports only</button>
+<button data-correct>Cargo.toml dependencies table</button>
+<button>target/debug build manifest</button>
+</div>
+<p class="quiz-feedback" hidden data-why>Dependencies are declared in <code>Cargo.toml</code>; Cargo updates the lockfile itself. (Your guessing_game manifest already shows this.)</p>
+</div>
+
+<div class="quiz" data-quiz>
+<p class="quiz-q">What does <code>cargo check</code> give you?</p>
+<div class="quiz-choices">
+<button data-correct>Errors without building binaries</button>
+<button>Binary in target/debug folder</button>
+<button>Formatted canonical source code</button>
+<button>Published crate on crates.io</button>
+</div>
+<p class="quiz-feedback" hidden data-why><code>check</code> skips code generation, so it is the fastest correctness feedback — use it while editing, <code>build</code> when you need to run.</p>
+</div>
+
+<div class="quiz" data-quiz>
+<p class="quiz-q">You delete <code>target/</code>. The next <code>cargo run</code> will…</p>
+<div class="quiz-choices">
+<button>Fail until Cargo.toml restored</button>
+<button>Fail until Internet reconnects</button>
+<button>Run without any rebuild</button>
+<button data-correct>Rebuild everything then run</button>
+</div>
+<p class="quiz-feedback" hidden data-why><code>target/</code> holds only regenerable artifacts (that is why it is gitignored). Deleting it costs a rebuild, nothing more.</p>
+</div>
+
+<div class="quiz" data-quiz>
+<p class="quiz-q">The <code>!</code> in <code>println!</code> means…</p>
+<div class="quiz-choices">
+<button>Unsafe block requiring review</button>
+<button data-correct>Macro expanded at compile</button>
+<button>Mutable borrow of stdout</button>
+<button>Async call returning future</button>
+</div>
+<p class="quiz-feedback" hidden data-why><code>!suffix</code> marks a macro invocation. Functions never end in <code>!</code> — a reliable visual cue when reading unfamiliar code.</p>
+</div>
+
+<h2>5 · Primary source &amp; spaced practice</h2>
+
+<p><strong>Read one thing:</strong> <a href="file:///home/othman/.local/share/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/book/ch01-03-hello-cargo.html">Book §1.3, "Hello, Cargo!"</a> — short, and it is the source of everything above.</p>
+<ul>
+<li><strong>Today:</strong> run <code>cargo fmt</code> + <code>cargo clippy</code> on <code>guessing_game/</code>. Paste any finding (or "both clean") back to me — findings become future lessons.</li>
+<li><strong>In two days, from memory:</strong> redraw the project-anatomy tree (§2) on paper, then check it against this lesson. That retrieval is what moves it to long-term storage.</li>
+</ul>
+
+<p><strong>Next:</strong> Lesson 0002 redoes Book Chapter 2 through your own guessing game — <code>match</code>, <code>parse</code>, and that shadowed <code>guess</code>.</p>
+
+<p>Terms introduced: <a href="../reference/glossary.html">Cargo, manifest</a> (glossary). Stuck on anything? Bring me your questions — nothing is off-limits.</p>
+
+</body>
+</html>
