@@ -7,5 +7,6 @@
 - Reference docs to maintain: ownership & borrowing cheat sheet, Rust glossary (binding in every lesson), `std` types & traits cheat sheet, code-reading guide.
 - Practice yard: Advent of Code 2015, straightforward solve then idiomatic refactor; review pasted solutions for idioms, error handling, clones/unwraps.
 - Toolchain: rustc/cargo 1.99.0, edition 2024. Local docs under `/home/othman/.local/share/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/`.
+- rustfmt (stable) auto-discovers only `rustfmt.toml`/`.rustfmt.toml` walking up from each source file; `~/.config/rustfmt.toml` is never consulted unless passed via `--config-path`. Global config trimmed to stable-only options on 2026-10-13 (nightly-only prefs stashed as comments); verified warning-free with 2-space behavior intact.
 - Reset (2026-10-13): user asked to restart from Book Chapter 1, reporting chapters 1–3 forgotten. Early lessons move fast and lead with retrieval; anything recalled correctly is promoted, not re-taught. See LR-0002.
 - Lesson authoring: button quizzes (`quiz-buttons.js`) need exactly one `data-correct` per quiz or every answer scores wrong — verify with a grep before shipping (bitten once in Lesson 0001, quiz 1).
