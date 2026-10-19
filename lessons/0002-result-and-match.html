@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 0002 — Failure is a value: Result and match</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/prism.css">
+<script src="../assets/prism.js" defer></script>
+<script src="../assets/quiz-buttons.js" defer></script>
+</head>
+<body>
+
+<p><a href="../MISSION.md">Mission</a> · <a href="../reference/glossary.html">Glossary</a> · <a href="./0001-cargo-runs-the-shop.html">Lesson 0001</a> · Lesson 0002</p>
+
+<h1>0002 — Failure is a value: <code>Result</code> and <code>match</code></h1>
+
+<p><em>One concept:</em> in Rust, failure is a <strong>value</strong> — a <code>Result</code> holding either success or error — and <code>match</code> forces you to handle both. No exceptions, no <code>try/catch</code>. <em>One win:</em> you can explain every line of the parse block in your own guessing game, including the line that silently decides what counts as a valid guess.</p>
+
+<p><em>Bridge from home:</em> you wrote <code>lib-result</code>, so you already know this shape — a container with two variants, <code>Ok</code> and <code>Err</code>. Rust's <code>Result&lt;T, E&gt;</code> is the same idea, with one difference that matters: <strong>the compiler refuses to let you ignore either variant.</strong></p>
+
+<h2>1 · Recall first (no peeking)</h2>
+
+<div class="task">
+<p><strong>Q1.</strong> In your TypeScript <code>lib-result</code>, a <code>Result</code> holds two possibilities. Name them.</p>
+<details><summary>Reveal</summary>
+<p><code>Ok</code> (success value) and <code>Err</code> (error value). Rust uses exactly these names — the Book's guessing game matches on <code>Ok(num)</code> and <code>Err(_)</code>, and so does your code.</p>
+</details>
+</div>
+
+<div class="task">
+<p><strong>Q2.</strong> Look at your guessing game: what happens when the player types <code>-5</code>? Guess before scrolling.</p>
+<details><summary>Reveal</summary>
+<p>It prints "Invalid guess". The reason is a single four-character annotation — <code>: u32</code> — and §3 proves it by removing it.</p>
+</details>
+</div>
+
+<h2>2 · The knowledge (five minutes)</h2>
+
+<p>Here is your parse block, the whole lesson in eight lines (<a href="file:///home/othman/.local/share/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/book/ch02-00-guessing-game-tutorial.html">Book ch. 2</a>, <a href="https://doc.rust-lang.org/book/ch02-00-guessing-game-tutorial.html">mirror</a>):</p>
+
+<pre class="language-rust"><code class="language-rust">let guess = match guess.parse() {
+    Ok(num) => num,
+    Err(_) => {
+        println!("Invalid guess, enter a number between 1 and 100 or type 'quit' to exit");
+        continue;
+    }
+};</code></pre>
+
+<ul>
+<li><strong><code>parse()</code> returns a <code>Result</code>, not a number.</strong> Like your <code>lib-result</code>, it holds either <code>Ok(num)</code> or <code>Err(e)</code>. There is no throwing; the failure travels <em>inside the value</em>.</li>
+<li><strong><code>match</code> opens the box — every variant gets an arm.</strong> <code>Ok(num)</code> binds the number; <code>Err(_)</code> catches every error, where <code>_</code> is a catch-all meaning "I don't care what's inside" (the Book's words: it matches all <code>Err</code> values "no matter what information they have inside them"). The arm prints a message and <code>continue</code>s the loop.</li>
+<li><strong>The second <code>let guess</code> <em>shadows</em> the first.</strong> Rust lets a new binding reuse a name, hiding the old one — the Book: "Shadowing lets us reuse the <code>guess</code> variable name rather than forcing us to create two unique variables, such as <code>guess_str</code> and <code>guess</code>." The <code>String</code> still exists underneath; the name now points at a number. (Full shadowing rules come with Chapter 3.)</li>
+<li><strong>Nothing says <code>u32</code> near <code>parse()</code> — yet it produces one.</strong> Type inference flows <em>backward</em>: <code>secret</code> is annotated <code>u32</code>, so <code>secret.cmp(&amp;guess)</code> demands <code>guess</code> be <code>u32</code>, so <code>parse()</code> must produce <code>u32</code>. The Book makes the same point in reverse: its draft compares a <code>String</code> against a number and dies with <code>E0308: mismatched types</code> — "Rust has a strong, static type system. However, it also has type inference." Your finished code <em>is</em> the fixed version of the Book's deliberate error.</li>
+</ul>
+
+<h2>3 · The compiler as teacher, then your own experiment</h2>
+
+<div class="task">
+<p><strong>Step 1 — predict.</strong> This compiles or not? If not, what is the error and the fix?</p>
+<pre class="language-rust"><code class="language-rust">let n = "42".parse().expect("bad");</code></pre>
+<details><summary>Reveal after guessing</summary>
+<p>It fails. Nothing pins down what <code>parse()</code> should produce — no annotation, no later use — so inference gives up. The real output (reproduced locally, trimmed):</p>
+<pre class="language-bash"><code class="language-bash">error[E0284]: type annotations needed
+ --&gt; src/main.rs:2:9
+  |
+2 |     let n = "42".parse().expect("bad");
+  |         ^        ----- type must be known at this point
+help: consider giving `n` an explicit type
+  |
+2 |     let n: /* Type */ = "42".parse().expect("bad");</code></pre>
+<p>The compiler doesn't just reject — it prescribes the fix. <strong>Read <code>help:</code> lines first; they are correct more often than not.</strong> (Modern <code>rustc</code> reports this as E0284; older texts say E0282. Same disease.)</p>
+</details>
+</div>
+
+<div class="task">
+<p><strong>Step 2 — reproduce it.</strong> In <code>playground/</code>, create <code>examples/e0284.rs</code> with that one line inside <code>fn main</code>, run <code>cargo build --example e0284</code>, and read the full error yourself. Then fix it with <code>: u32</code>, rebuild, and delete the file. Checkpoint: you saw E0284 with your own eyes and cleared it with an annotation.</p>
+</div>
+
+<div class="task">
+<p><strong>Step 3 — the annotation is behavior.</strong> In <code>guessing_game/src/main.rs</code>, temporarily delete <code>: u32</code> from <code>let secret: u32</code>. Predict: does it still compile? Then build and run <code>printf -- "-5\nquit\n" | cargo run -q</code>. Checkpoint: it <em>does</em> compile — integers silently fall back to <code>i32</code> — and <code>-5</code> is now accepted as a guess ("Bigger!") instead of rejected. The annotation wasn't documentation; it was the rule that kept negatives out. <strong>Revert the edit when done</strong> (<code>git diff</code> should be empty).</p>
+</div>
+
+<h2>4 · Lock it in</h2>
+
+<div class="quiz" data-quiz>
+<p class="quiz-q"><code>.expect("…")</code> on an <code>Err</code> value…</p>
+<div class="quiz-choices">
+<button>Returns a default value</button>
+<button data-correct>Panics with custom message</button>
+<button>Skips to next iteration</button>
+<button>Logs warning then continues</button>
+</div>
+<p class="quiz-feedback" hidden data-why><code>expect</code> unwraps success or crashes with your message — fine for a tutorial's input loop, forbidden in library code (stage 2 replaces it with <code>?</code> and real error types).</p>
+</div>
+
+<div class="quiz" data-quiz>
+<p class="quiz-q">In <code>Err(_)</code>, the underscore means…</p>
+<div class="quiz-choices">
+<button>Rethrow the inner error</button>
+<button>Bind error to underscore</button>
+<button>Match only empty errors</button>
+<button data-correct>Ignore the inner value</button>
+</div>
+<p class="quiz-feedback" hidden data-why><code>_</code> is the catch-all: every <code>Err</code> matches regardless of contents. Your game deliberately discards <em>why</em> parsing failed.</p>
+</div>
+
+<div class="quiz" data-quiz>
+<p class="quiz-q"><code>guess.parse()</code> knows to produce <code>u32</code> because…</p>
+<div class="quiz-choices">
+<button data-correct>Later comparison demands u32</button>
+<button>Parse defaults to u32</button>
+<button>Strings convert into u32</button>
+<button>Manifest declares integer types</button>
+</div>
+<p class="quiz-feedback" hidden data-why>Inference flows backward from <code>secret.cmp(&amp;guess)</code>: <code>secret</code> is <code>u32</code>, so <code>guess</code> — and therefore <code>parse()</code>'s output — must be <code>u32</code>. (There is no default; unpinned integers fall back to <code>i32</code>, as Step 3 showed.)</p>
+</div>
+
+<div class="quiz" data-quiz>
+<p class="quiz-q">Shadowing <code>guess</code> with a <code>u32</code> gives you…</p>
+<div class="quiz-choices">
+<button>Two live variables aliased</button>
+<button>Mutates the original binding</button>
+<button data-correct>New binding hides old</button>
+<button>Converts String into u32</button>
+</div>
+<p class="quiz-feedback" hidden data-why>A shadow is a brand-new binding reusing the name — nothing is mutated or converted. (Mutation, <code>mut</code>, is next lesson's topic.)</p>
+</div>
+
+<h2>5 · Primary source &amp; spaced practice</h2>
+
+<p><strong>Read one thing:</strong> <a href="file:///home/othman/.local/share/rustup/toolchains/stable-x86_64-unknown-linux-gnu/share/doc/rust/html/book/ch02-00-guessing-game-tutorial.html">Book Chapter 2, "Programming a Guessing Game"</a> — your code is its final listing plus a <code>quit</code> branch, so it reads as commentary on your own program. Note its <code>rand = "0.10.1"</code>: your <code>0.9.2</code> uses the identical <code>rng().random_range()</code> API, no drift.</p>
+<ul>
+<li><strong>Today:</strong> finish Steps 2–3 above and send me the E0284 line plus your <code>-5</code> result — and confirm <code>git diff</code> is empty afterward.</li>
+<li><strong>In two days, from memory:</strong> rewrite the parse-<code>match</code> block on paper, then diff it against your file. Retrieval, again.</li>
+</ul>
+
+<p><strong>Next:</strong> Lesson 0003 opens Chapter 3 — variables, <code>mut</code>, and scalar types, the rules behind the shadows.</p>
+
+<p>Terms touched: <code>Result</code>, <code>match</code>, shadowing — not in the <a href="../reference/glossary.html">glossary</a> yet; they land there when your quiz scores say they're yours. Stuck on anything? Bring me your questions — nothing is off-limits.</p>
+
+</body>
+</html>
